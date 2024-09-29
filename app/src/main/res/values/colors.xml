@@ -2,6 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="grey">#625e5d</color>
     <color name="hijau_tokpar">#40b548</color>
     <color name="hijau_tokpar2">#43A047</color>
+    <color name="spinner">#dfdedd</color>
 </resources>
