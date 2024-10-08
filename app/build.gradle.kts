@@ -49,4 +49,5 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.7.20")
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
 }

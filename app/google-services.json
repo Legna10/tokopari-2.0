@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "255682592236",
+    "project_id": "tokopari-a0d52",
+    "storage_bucket": "tokopari-a0d52.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:255682592236:android:fe37409e1020c25c5654c9",
+        "android_client_info": {
+          "package_name": "com.example.tokopari"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEDAFKmhHqRDRohZhp6Zr7wmOQ4tqYtSM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
