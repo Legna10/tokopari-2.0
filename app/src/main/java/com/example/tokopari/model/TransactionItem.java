@@ -1,25 +1,31 @@
 package com.example.tokopari.model;
 
 public class TransactionItem {
-    private String productName;
-    private String status;
-    private String date;
+    private String id;        // ID dari produk
+    private String title;     // Judul produk
+    private String dateTime;  // Tanggal dan waktu transaksi
+    private float price;     // Harga produk
 
-    public TransactionItem(String productName, String status, String date) {
-        this.productName = productName;
-        this.status = status;
-        this.date = date;
+    public TransactionItem(String id, String title, String dateTime, float price) {
+        this.id = id;
+        this.title = title;
+        this.dateTime = dateTime;
+        this.price = price;
     }
 
-    public String getProductName() {
-        return productName;
+    public String getId() {
+        return id;
     }
 
-    public String getStatus() {
-        return status;
+    public String getTitle() {
+        return title;
     }
 
-    public String getDate() {
-        return date;
+    public String getDateTime() {
+        return dateTime;
+    }
+
+    public float getPrice() {
+        return price;
     }
 }

@@ -4,63 +4,74 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-
+import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.tokopari.adapter.TransactionAdapter;
-import com.example.tokopari.model.TransactionItem;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Transaction extends Fragment {
 
-    private Spinner statusSpinner, dateSpinner;
     private RecyclerView recyclerView;
-    private TransactionAdapter transactionAdapter;
-    private List<TransactionItem> transactionItems;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_transaction, container, false);
 
-        // Find the Spinner views from the layout
-        statusSpinner = view.findViewById(R.id.Status);
-        dateSpinner = view.findViewById(R.id.Date);
-
-        // Create arrays for the Spinner data
-        String[] statusOptions = {"Pending", "Completed", "Cancelled"};
-        String[] dateOptions = {"Today", "This Week", "This Month"};
-
-        // ArrayAdapter for status spinner
-        ArrayAdapter<String> statusAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_item, statusOptions);
-        statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        statusSpinner.setAdapter(statusAdapter);
-
-        // ArrayAdapter for date spinner
-        ArrayAdapter<String> dateAdapter = new ArrayAdapter<>(getContext(),
-                android.R.layout.simple_spinner_item, dateOptions);
-        dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        dateSpinner.setAdapter(dateAdapter);
-
-        // RecyclerView setup
         recyclerView = view.findViewById(R.id.recyclerViewTransaction);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Initialize the transaction list
-        transactionItems = new ArrayList<>();
-        transactionItems.add(new TransactionItem("Produk 1", "Pending", "Today"));
-        transactionItems.add(new TransactionItem("Produk 2", "Completed", "This Week"));
-        // Add more transactions as needed
-
-        transactionAdapter = new TransactionAdapter(transactionItems);
-        recyclerView.setAdapter(transactionAdapter);
+        // Example: Save a transaction
+        saveTransaction(3, 450000, "2024-11-19");
 
         return view;
+    }
+
+    private void saveTransaction(int productQuantity, double totalPrice, String dateTransaction) {
+        String url = "http://192.168.1.100/tokopari/save_transaction.php"; // Replace with your IP
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            boolean success = jsonResponse.getBoolean("success");
+                            String message = jsonResponse.getString("message");
+                            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(getContext(), "Error parsing response", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Toast.makeText(getContext(), "Failed to connect to server", Toast.LENGTH_SHORT).show();
+                    }
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("product_quantity", String.valueOf(productQuantity));
+                params.put("total_price", String.valueOf(totalPrice));
+                params.put("date_transaction", dateTransaction);
+                return params;
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+        requestQueue.add(stringRequest);
     }
 }

@@ -1,53 +1,94 @@
 package com.example.tokopari.model;
 
 public class Product {
-    private String name;
-    private int price;
-    private String imageUrl;
-    private boolean flashSale; // Menambahkan properti ini
+    private String id;
+    private String title;
+    private float price;
+    private float originalPrice;
+    private float discountedPrice;
+    private String image;
+    private int quantity;
 
-    public Product() {
-        // Default constructor required for calls to DataSnapshot.getValue(Product.class)
-    }
-
-    public Product(String name, int price, String imageUrl, boolean flashSale) {
-        this.name = name;
+    // Constructor
+    public Product(String id, String title, float price, float originalPrice, float discountedPrice, String image, int quantity) {
+        this.id = id;
+        this.title = title;
         this.price = price;
-        this.imageUrl = imageUrl;
-        this.flashSale = flashSale;
+        this.originalPrice = originalPrice;
+        this.discountedPrice = discountedPrice;
+        this.image = image;
+        this.quantity = quantity;
     }
 
-    // Getter dan setter untuk setiap properti
-
-    public String getName() {
-        return name;
+    // Getter dan Setter untuk ID
+    public String getId() {
+        return id;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public int getPrice() {
+    // Getter dan Setter untuk Title
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    // Getter dan Setter untuk Price
+    public float getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(float price) {
         this.price = price;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    // Getter dan Setter untuk Image
+    public String getImage() {
+        return image;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setImage(String image) {
+        this.image = image;
     }
 
-    public boolean isFlashSale() {
-        return flashSale;
+    // Getter dan Setter untuk Quantity
+    public int getQuantity() {
+        return quantity;
     }
 
-    public void setFlashSale(boolean flashSale) {
-        this.flashSale = flashSale;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    // Menghitung total harga berdasarkan kuantitas
+    public float getTotalPrice() {
+        return price * quantity;
+    }
+
+    public float getOriginalPrice() {
+        return price;
+    }
+
+    public float getDiscountedPrice() {
+        float totalPrice = price * quantity; // Total price based on quantity
+        float discountPercentage = getDiscountPercentage(); // Calculate the discount percentage
+        return totalPrice * (1 - discountPercentage) / quantity; // Apply discount to the total price
+    }
+
+
+    private float getDiscountPercentage() {
+        if (quantity >= 6) {
+            return 0.15f; // 15% diskon
+        } else if (quantity >= 4) {
+            return 0.10f; // 10% diskon
+        } else if (quantity >= 1) {
+            return 0.05f; // 5% diskon
+        }
+        return 0; // Tidak ada diskon
     }
 }
