@@ -9,7 +9,6 @@ public class Product {
     private String image;
     private int quantity;
 
-    // Constructor
     public Product(String id, String title, float price, float originalPrice, float discountedPrice, String image, int quantity) {
         this.id = id;
         this.title = title;
@@ -20,7 +19,6 @@ public class Product {
         this.quantity = quantity;
     }
 
-    // Getter dan Setter untuk ID
     public String getId() {
         return id;
     }
@@ -29,7 +27,6 @@ public class Product {
         this.id = id;
     }
 
-    // Getter dan Setter untuk Title
     public String getTitle() {
         return title;
     }
@@ -38,7 +35,6 @@ public class Product {
         this.title = title;
     }
 
-    // Getter dan Setter untuk Price
     public float getPrice() {
         return price;
     }
@@ -47,7 +43,6 @@ public class Product {
         this.price = price;
     }
 
-    // Getter dan Setter untuk Image
     public String getImage() {
         return image;
     }
@@ -56,7 +51,6 @@ public class Product {
         this.image = image;
     }
 
-    // Getter dan Setter untuk Quantity
     public int getQuantity() {
         return quantity;
     }
@@ -65,7 +59,6 @@ public class Product {
         this.quantity = quantity;
     }
 
-    // Menghitung total harga berdasarkan kuantitas
     public float getTotalPrice() {
         return price * quantity;
     }
@@ -75,20 +68,20 @@ public class Product {
     }
 
     public float getDiscountedPrice() {
-        float totalPrice = price * quantity; // Total price based on quantity
-        float discountPercentage = getDiscountPercentage(); // Calculate the discount percentage
-        return totalPrice * (1 - discountPercentage) / quantity; // Apply discount to the total price
+        float totalPrice = price * quantity;
+        float discountPercentage = getDiscountPercentage();
+        return totalPrice * (1 - discountPercentage) / quantity;
     }
 
 
     private float getDiscountPercentage() {
-        if (quantity >= 6) {
+        if (quantity >= 10) {
             return 0.15f; // 15% diskon
-        } else if (quantity >= 4) {
+        } else if (quantity >= 5) {
             return 0.10f; // 10% diskon
-        } else if (quantity >= 1) {
+        } else if (quantity >= 2) {
             return 0.05f; // 5% diskon
         }
-        return 0; // Tidak ada diskon
+        return 0; //no diskon
     }
 }

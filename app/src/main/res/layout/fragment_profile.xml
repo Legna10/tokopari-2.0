@@ -5,26 +5,46 @@
     android:layout_height="match_parent"
     tools:context=".Profile">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:fontFamily="@font/mandala"
-        android:text="@string/app_name"
-        android:textColor="@color/hijau_tokpar2"
-        android:textSize="50sp"
-        android:textStyle="bold"
+    <FrameLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Tulisan Tokopari -->
+        <TextView
+            android:id="@+id/textTokopari"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="@font/mandala"
+            android:text="tokopari"
+            android:textColor="@color/hijau_tokpar2"
+            android:textSize="50sp"
+            android:textStyle="bold" />
+
+        <!-- VideoView yang tersembunyi -->
+        <VideoView
+            android:id="@+id/videoTokopari"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Tokopari Video"
+            android:visibility="gone"
+            android:focusable="true"
+            android:focusableInTouchMode="true"/>
+
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/linearLayout2"
         android:layout_width="match_parent"
-        android:layout_height="500sp"
+        android:layout_height="400sp"
         android:layout_marginHorizontal="15sp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="180dp"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.466"
@@ -66,10 +86,10 @@
                 android:id="@+id/etEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:importantForAccessibility="no"
                 android:contentDescription="Enter Email"
-                android:inputType="textEmailAddress"
                 android:focusableInTouchMode="false"
+                android:importantForAccessibility="no"
+                android:inputType="textEmailAddress"
                 android:text="example@example.com"
                 android:textColor="@color/black" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -86,10 +106,10 @@
                 android:id="@+id/etName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:importantForAccessibility="yes"
                 android:contentDescription="Enter Name"
-                android:inputType="textPersonName"
-                android:focusableInTouchMode="true"/>
+                android:focusableInTouchMode="true"
+                android:importantForAccessibility="yes"
+                android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Username Input -->
@@ -104,30 +124,30 @@
                 android:id="@+id/etUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:importantForAccessibility="yes"
                 android:contentDescription="Enter Username"
-                android:inputType="text"
-                android:focusableInTouchMode="true"/>
+                android:focusableInTouchMode="true"
+                android:importantForAccessibility="yes"
+                android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
 
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:orientation="horizontal"
+        android:weightSum="2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/linearLayout2"
-        android:weightSum="2">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout2">
 
         <Button
             android:id="@+id/buttonSave"
             android:layout_width="0dp"
             android:layout_height="45dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/hijau_tokpar2"
+            android:backgroundTint="@color/ungu"
             android:text="Save"
             android:textSize="20sp" />
 
@@ -135,9 +155,9 @@
             android:id="@+id/button"
             android:layout_width="0dp"
             android:layout_height="45dp"
-            android:layout_weight="1"
             android:layout_marginStart="16dp"
-            android:backgroundTint="@color/hijau_tokpar2"
+            android:layout_weight="1"
+            android:backgroundTint="@color/ungu"
             android:text="Logout"
             android:textSize="20sp" />
     </LinearLayout>
