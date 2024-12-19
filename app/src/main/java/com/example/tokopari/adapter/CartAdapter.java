@@ -38,22 +38,16 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         Product product = cartItems.get(position);
         holder.productTitle.setText(product.getTitle());
 
-        // Format price with DecimalFormat
         String formattedOriginalPrice = formatPrice(product.getOriginalPrice());
         holder.productOriginalPrice.setText("Rp " + formattedOriginalPrice);
         holder.productOriginalPrice.setPaintFlags(holder.productOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-
-        // Format the discounted price (unit price)
         String formattedDiscountedPrice = formatPrice(product.getDiscountedPrice());
         holder.productDiscountedPrice.setText("Rp " + formattedDiscountedPrice);
 
-        // Always update quantity
         holder.productQuantity.setText(String.valueOf(product.getQuantity()));
-
-        // Load image using Glide
         Glide.with(context).load(product.getImage()).into(holder.productImage);
 
-        // Update quantity
+        //Update quantity
         holder.btnMinus.setOnClickListener(v -> {
             if (product.getQuantity() > 1) {
                 product.setQuantity(product.getQuantity() - 1);
@@ -82,19 +76,17 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
     public interface OnQuantityChangeListener {
         void onQuantityChanged(Product product, int newQuantity);
-        void onProductRemoved(Product product); // Menambahkan metode untuk penghapusan produk
+        void onProductRemoved(Product product);
     }
 
     public void setCartItems(List<Product> cartItems) {
         this.cartItems = cartItems;
-        notifyDataSetChanged(); // Menyegarkan seluruh daftar jika data berubah
+        notifyDataSetChanged();
     }
 
     public void updateProductQuantity(int position, Product product) {
-        // Update produk di posisi tertentu
-        cartItems.set(position, product); // Update data produk
+        cartItems.set(position, product);
 
-        // Notifikasi perubahan item di posisi tertentu
         notifyItemChanged(position);
     }
 

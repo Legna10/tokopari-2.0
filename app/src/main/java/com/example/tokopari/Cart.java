@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.fragment.app.Fragment;
@@ -31,34 +32,39 @@ public class Cart extends Fragment implements CartAdapter.OnQuantityChangeListen
     private TextView totalPriceTextView;
     private TextView originalPriceTextView;
     private TextView discountTextView;
+    private EditText voucherEditText;
+    private Button applyVoucherButton;
+    private float voucherDiscount = 0f;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_cart, container, false);
 
-        // Menginisialisasi RecyclerView dan CartManager
         recyclerView = view.findViewById(R.id.recyclerViewCart);
         totalPriceTextView = view.findViewById(R.id.totalPriceTextView);
+        discountTextView = view.findViewById(R.id.discountTextView);
+        voucherEditText = view.findViewById(R.id.voucherEditText);
+        applyVoucherButton = view.findViewById(R.id.applyVoucherButton);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         cartManager = new CartManager(getContext());
 
-        // Mengambil item cart dari CartManager
         List<Product> cartItems = cartManager.getCartItems();
 
-        // Menginisialisasi CartAdapter dengan listener untuk perubahan kuantitas
         cartAdapter = new CartAdapter(cartItems, this);
         recyclerView.setAdapter(cartAdapter);
 
-        // Menghitung total harga
         updateTotalPrice(cartItems);
 
-        // Handle Checkout Button Click
+        applyVoucherButton.setOnClickListener(v -> {
+            String voucherCode = voucherEditText.getText().toString().trim();
+            applyVoucher(voucherCode);
+        });
+
         Button checkoutButton = view.findViewById(R.id.checkoutButton);
         checkoutButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Create an AlertDialog to confirm the checkout action
                 new android.app.AlertDialog.Builder(getActivity())
                         .setTitle("Confirm Checkout")
                         .setMessage("Are you sure you want to proceed with checkout?")
@@ -68,7 +74,7 @@ public class Cart extends Fragment implements CartAdapter.OnQuantityChangeListen
                                 saveCheckoutToFirestore(cartManager.getCartItems());
                                 cartManager.clearCart();
 
-                                cartAdapter.setCartItems(cartManager.getCartItems()); // Update the adapter
+                                cartAdapter.setCartItems(cartManager.getCartItems());
                                 updateTotalPrice(cartManager.getCartItems());
                                 Toast.makeText(getActivity(), "Checkout confirmed!", Toast.LENGTH_SHORT).show();
                             }
@@ -79,27 +85,40 @@ public class Cart extends Fragment implements CartAdapter.OnQuantityChangeListen
         });
         return view;
     }
+
+    private void applyVoucher(String voucherCode) {
+        if ("DISKON10".equals(voucherCode)) {
+            voucherDiscount = 0.10f;  // Diskon 10%
+            Toast.makeText(getActivity(), "Voucher applied: 10% discount", Toast.LENGTH_SHORT).show();
+        } else if ("DISKON20".equals(voucherCode)) {
+            voucherDiscount = 0.20f;  // Diskon 20%
+            Toast.makeText(getActivity(), "Voucher applied: 20% discount", Toast.LENGTH_SHORT).show();
+        } else {
+            voucherDiscount = 0f;  // Voucher tidak valid
+            Toast.makeText(getActivity(), "Invalid voucher code", Toast.LENGTH_SHORT).show();
+        }
+
+        List<Product> cartItems = cartManager.getCartItems();
+        updateTotalPrice(cartItems);
+    }
+
     private void saveCheckoutToFirestore(List<Product> cartItems) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         Map<String, Object> checkoutData = new HashMap<>();
 
-        // Menghitung harga total tanpa diskon
         float totalPrice = 0;
         for (Product product : cartItems) {
             totalPrice += product.getTotalPrice();
         }
 
-        // Menghitung diskon dan harga setelah diskon
         float discountPercentage = getDiscountPercentage(cartItems);
         float discount = totalPrice * discountPercentage;
         float discountedPrice = totalPrice - discount;
 
-        // Menyimpan data checkout
         checkoutData.put("products", cartItems);
-        checkoutData.put("totalPrice", discountedPrice); // Simpan harga setelah diskon
-        checkoutData.put("timestamp", System.currentTimeMillis()); // Simpan timestamp checkout
+        checkoutData.put("totalPrice", discountedPrice);
+        checkoutData.put("timestamp", System.currentTimeMillis());
 
-        // Simpan data checkout ke Firestore
         CollectionReference checkoutCollection = db.collection("checkouts");
         checkoutCollection.add(checkoutData)
                 .addOnSuccessListener(documentReference -> {
@@ -114,11 +133,9 @@ public class Cart extends Fragment implements CartAdapter.OnQuantityChangeListen
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Inisialisasi TextViews setelah view dibuat
         originalPriceTextView = view.findViewById(R.id.productOriginalPrice);
         discountTextView = view.findViewById(R.id.discountTextView);
 
-        // Check if views are properly initialized
         if (originalPriceTextView == null || discountTextView == null) {
             Log.e("Cart", "TextView initialization failed");
         }
@@ -126,83 +143,66 @@ public class Cart extends Fragment implements CartAdapter.OnQuantityChangeListen
 
     @Override
     public void onQuantityChanged(Product product, int newQuantity) {
-        // Memperbarui jumlah produk di CartManager
         cartManager.updateProductQuantity(product, newQuantity);
 
-        // Mengambil daftar produk yang sudah diperbarui
         List<Product> cartItems = cartManager.getCartItems();
 
-        // Mengupdate total harga
         updateTotalPrice(cartItems);
 
-        // Menemukan posisi produk yang diubah dalam daftar
         int position = cartItems.indexOf(product);
         if (position != -1) {
-            // Memperbarui produk di adapter secara realtime
             cartAdapter.updateProductQuantity(position, product);
         }
 
-        // Menyegarkan seluruh daftar cart
-        cartAdapter.setCartItems(cartItems);  // Memastikan data terbaru diterapkan
+        cartAdapter.setCartItems(cartItems);
     }
 
     @Override
     public void onProductRemoved(Product product) {
-        // Hapus produk dari CartManager
         cartManager.removeFromCart(product);
 
-        // Mengupdate daftar produk yang tersisa dan menghitung total harga
         List<Product> cartItems = cartManager.getCartItems();
         updateTotalPrice(cartItems);
 
-        // Mengupdate adapter untuk menghapus item dari RecyclerView
         int position = cartItems.indexOf(product);
         if (position != -1) {
             cartAdapter.notifyItemRemoved(position);
         }
-
-        // Perbarui data adapter
-        cartAdapter.setCartItems(cartItems);  // Set data yang diperbarui
+        cartAdapter.setCartItems(cartItems);
     }
 
     private void updateTotalPrice(List<Product> cartItems) {
         float totalPrice = 0;
 
-        // Calculate total price of all products in the cart
         for (Product product : cartItems) {
-            totalPrice += product.getTotalPrice(); // Ensure getTotalPrice returns correct value
+            totalPrice += product.getTotalPrice();
         }
 
-        // Get the discount percentage based on the number of products
         float discountPercentage = getDiscountPercentage(cartItems);
 
-        // Calculate the discount amount
-        float discount = totalPrice * discountPercentage;
+        float productDiscount = totalPrice * discountPercentage;
 
-        // Calculate the price after discount
-        float discountedPrice = totalPrice - discount;
+        float priceAfterProductDiscount = totalPrice - productDiscount;
+        float voucherDiscountAmount = priceAfterProductDiscount * voucherDiscount;
 
-        // Format the prices for display
+        float finalPrice = priceAfterProductDiscount - voucherDiscountAmount;
+
         String formattedTotalPrice = "Rp " + formatPrice(totalPrice);
-        String formattedDiscountedPrice = "Total: Rp " + formatPrice(discountedPrice);
-        String formattedDiscount = "You saved: Rp " + formatPrice(discount) ;
+        String formattedFinalPrice = "Total: Rp " + formatPrice(finalPrice);
+        String formattedSavings = "You saved: Rp " + formatPrice(productDiscount + voucherDiscountAmount);
 
-        // Display the discounted price
-        totalPriceTextView.setText(formattedDiscountedPrice);
+        totalPriceTextView.setText(formattedFinalPrice);
 
-        // Add a TextView for the total price before the discount (strike-through)
         if (originalPriceTextView != null) {
             originalPriceTextView.setText(formattedTotalPrice);
             originalPriceTextView.setPaintFlags(originalPriceTextView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
         }
 
-        // Show the discount if desired
         if (discountTextView != null) {
-            discountTextView.setText(formattedDiscount);
+            discountTextView.setText(formattedSavings);
         }
     }
 
-    // Memformat harga menjadi format yang lebih baik
     private String formatPrice(float price) {
         java.text.DecimalFormat decimalFormat = new java.text.DecimalFormat("#,###");
         return decimalFormat.format(price).replace(",", ".");

@@ -7,14 +7,18 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,6 +29,7 @@ import java.io.IOException;
 
 import android.content.ContentValues;
 import android.app.AlertDialog;
+import android.widget.VideoView;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -39,6 +44,10 @@ public class Profile extends Fragment {
     private Button buttonLogout, buttonSave;
     private SharedPreferences sharedPreferences;
     private TextInputLayout nameInputLayout, usernameInputLayout, emailInputLayout;
+    private TextView textTokopari;
+    private VideoView videoView;
+    private FrameLayout frameLayout;
+    private android.util.Log Log;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,14 +69,64 @@ public class Profile extends Fragment {
         usernameInputLayout = view.findViewById(R.id.usernameInputLayout);
         emailInputLayout = view.findViewById(R.id.emailInputLayout);
         photoProfile = view.findViewById(R.id.photoProfile);
+        textTokopari = view.findViewById(R.id.textTokopari);
+        videoView = view.findViewById(R.id.videoTokopari);
+        frameLayout = view.findViewById(R.id.frameLayout);
+
+        videoView.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                Log.d("ProfileFragment", "Surface created, starting video...");
+
+                Uri videoUri = Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.tokopari_vid);
+                videoView.setVideoURI(videoUri);
+                videoView.start();
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+                videoView.stopPlayback();
+            }
+        });
+
+        textTokopari.setOnClickListener(v -> {
+            Log.d("ProfileFragment", "Text clicked, hiding text and showing video");
+
+            textTokopari.setVisibility(View.GONE);
+            videoView.setVisibility(View.VISIBLE);
+            frameLayout.setVisibility(View.VISIBLE);
+
+            Uri videoUri = Uri.parse("android.resource://" + getActivity().getPackageName() + "/" + R.raw.tokopari_vid);
+            videoView.setVideoURI(videoUri);
+
+            videoView.setOnPreparedListener(mp -> {
+                Log.d("ProfileFragment", "Video prepared, starting playback...");
+                videoView.start();
+            });
+
+            videoView.setOnCompletionListener(mp -> {
+                Log.d("ProfileFragment", "Video playback completed");
+
+                getActivity().runOnUiThread(() -> {
+                    videoView.setVisibility(View.GONE);
+                    frameLayout.setVisibility(View.GONE);
+
+                    textTokopari.setVisibility(View.VISIBLE);
+                });
+            });
+        });
+
 
         loadSavedData();
         setInitialHints();
 
-        // Menambahkan listener untuk gambar profil
         photoProfile.setOnClickListener(v -> showImagePickerDialog());
 
-        // Focus listeners untuk mengganti hint
         etName.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 nameInputLayout.setHint("Name");
@@ -84,11 +143,10 @@ public class Profile extends Fragment {
             }
         });
 
-        // Handle "Done" key press untuk menyembunyikan keyboard
         etName.setOnEditorActionListener((v, actionId, event) -> {
             if (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                clearFocusFromFields();  // Remove focus from the fields
-                hideKeyboard(v);  // Hide the keyboard
+                clearFocusFromFields();
+                hideKeyboard(v);
                 return true;
             }
             return false;
@@ -96,14 +154,13 @@ public class Profile extends Fragment {
 
         etUsername.setOnEditorActionListener((v, actionId, event) -> {
             if (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                clearFocusFromFields();  // Remove focus from the fields
-                hideKeyboard(v);  // Hide the keyboard
+                clearFocusFromFields();
+                hideKeyboard(v);
                 return true;
             }
             return false;
         });
 
-        // Set action untuk buttonSave dan buttonLogout
         buttonSave.setOnClickListener(v -> saveData());
         buttonLogout.setOnClickListener(v -> logout());
 
@@ -150,11 +207,9 @@ public class Profile extends Fragment {
             if (requestCode == PICK_IMAGE_REQUEST && data != null && data.getData() != null) {
                 imageUri = data.getData();
             } else if (requestCode == CAMERA_REQUEST_CODE && imageUri != null) {
-                // Handle camera image
             }
 
             if (imageUri != null) {
-                // Update ImageView with selected photo
                 photoProfile.setImageURI(imageUri);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("profileImageUri", imageUri.toString());
@@ -166,26 +221,24 @@ public class Profile extends Fragment {
     private void saveData() {
         String name = etName.getText().toString();
         String username = etUsername.getText().toString();
-        String email = etEmail.getText().toString(); // Ambil email yang dimasukkan oleh pengguna
+        String email = etEmail.getText().toString();
 
         SharedPrefManager sharedPrefManager = new SharedPrefManager(getActivity());
-        sharedPrefManager.setUserName(name);       // Simpan nama
-        sharedPrefManager.setUserUsername(username); // Simpan username
-        sharedPrefManager.setUserEmail(email);    // Simpan email yang baru
+        sharedPrefManager.setUserName(name);
+        sharedPrefManager.setUserUsername(username);
+        sharedPrefManager.setUserEmail(email);
     }
 
     private void loadSavedData() {
         SharedPrefManager sharedPrefManager = new SharedPrefManager(getActivity());
 
-        // Ambil data yang disimpan dari SharedPreferences
         String savedName = sharedPrefManager.getUserName();
         String savedUsername = sharedPrefManager.getUserUsername();
-        String savedEmail = sharedPrefManager.getUserEmail(); // Ambil email yang disimpan
+        String savedEmail = sharedPrefManager.getUserEmail();
 
-        // Set data yang diambil ke EditText
         etName.setText(savedName);
         etUsername.setText(savedUsername);
-        etEmail.setText(savedEmail);  // Menampilkan email di EditText
+        etEmail.setText(savedEmail);
 
         String savedImageUri = sharedPreferences.getString("profileImageUri", null);
         if (savedImageUri != null) {
@@ -206,43 +259,34 @@ public class Profile extends Fragment {
     private void logout() {
         FirebaseAuth.getInstance().signOut();
 
-        // Clear user login status and other data from SharedPreferences
         SharedPrefManager sharedPrefManager = new SharedPrefManager(getActivity());
-        sharedPrefManager.logout();  // Clears the login status and user info
+        sharedPrefManager.logout();
 
-        // Ensure the login status is properly reset
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear();  // This clears all data from SharedPreferences
+        editor.clear();
         editor.apply();
 
-        // Redirect to LoginAndRegisterActivity and clear the back stack
         Intent intent = new Intent(getActivity(), LoginAndRegisterActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);  // Clear the activity stack
         startActivity(intent);
 
-        // Close the current activity (Profile fragment's parent activity) and prevent going back
-        getActivity().finishAffinity();  // Close all activities in the current task
+        getActivity().finishAffinity();
     }
 
     private void clearFocusFromFields() {
-        // Clear focus from both fields
         etName.clearFocus();
         etUsername.clearFocus();
 
-        // Set focusable to false temporarily to remove focus indicators
         etName.setFocusable(false);
         etUsername.setFocusable(false);
 
-        // Request focus on a non-editable view to ensure focus is cleared
-        View nonEditableView = getView().findViewById(R.id.buttonSave);  // Use any view that is not focused
-        nonEditableView.requestFocus();  // Request focus to remove focus from EditTexts
+        View nonEditableView = getView().findViewById(R.id.buttonSave);
+        nonEditableView.requestFocus();
 
-        // Set focusable back to true after the interaction is done
         etName.setFocusable(true);
         etUsername.setFocusable(true);
     }
 
-    // Hide the keyboard when called
     private void hideKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {

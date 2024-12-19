@@ -1,156 +1,178 @@
-package com.example.tokopari;
+        package com.example.tokopari;
 
-import android.content.Context;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.SearchView;
-import android.widget.Toast;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import com.example.tokopari.api.ApiClient;
-import com.example.tokopari.api.ApiService;
-import com.example.tokopari.model.Product;
-import com.example.tokopari.adapter.ProductAdapter;
-import com.example.tokopari.storage.CartManager;
-import java.util.Collections;
-import java.util.List;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+        import android.content.Intent;
+        import android.graphics.Bitmap;
+        import android.net.Uri;
+        import android.os.Bundle;
+        import android.provider.MediaStore;
+        import android.util.Log;
+        import android.view.LayoutInflater;
+        import android.view.View;
+        import android.view.ViewGroup;
+        import android.widget.ImageButton;
+        import android.widget.SearchView;
+        import android.widget.Toast;
+        import androidx.fragment.app.Fragment;
+        import androidx.recyclerview.widget.GridLayoutManager;
+        import androidx.recyclerview.widget.RecyclerView;
+        import com.example.tokopari.adapter.ProductAdapter;
+        import com.example.tokopari.api.ApiClient;
+        import com.example.tokopari.api.ApiService;
+        import com.example.tokopari.model.Product;
+        import com.example.tokopari.storage.CartManager;
+        import java.util.ArrayList;
+        import java.util.Collections;
+        import java.util.List;
+        import retrofit2.Call;
+        import retrofit2.Callback;
+        import retrofit2.Response;
+        import com.google.zxing.BinaryBitmap;
+        import com.google.zxing.RGBLuminanceSource;
+        import com.google.zxing.Result;
+        import com.google.zxing.common.HybridBinarizer;
+        import com.google.zxing.qrcode.QRCodeReader;
 
-public class Home extends Fragment implements SensorEventListener, ProductAdapter.OnAddToCartListener {
+        public class Home extends Fragment implements ProductAdapter.OnAddToCartListener {
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private static final float SHAKE_THRESHOLD = 15.0f;
-    private RecyclerView recyclerView;
-    private ProductAdapter productAdapter;
-    private long lastShakeTime = 0;
-    private int shakeCount = 0;
+            private static final int GALLERY_REQUEST_CODE = 1001;
+            private RecyclerView recyclerView;
+            private ProductAdapter productAdapter;
+            private ImageButton buttonScanQR;
+            private SearchView searchView;
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
-
-        // Inisialisasi RecyclerView
-        recyclerView = view.findViewById(R.id.recyclerViewRecommendation);
-        int numberOfColumns = 2;
-        recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), numberOfColumns));
-
-        // Fetch Products from API
-        fetchProducts();
-
-        // Inisialisasi SearchView
-        SearchView searchView = view.findViewById(R.id.search);
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) {
-                return false;
+            public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+                View view = inflater.inflate(R.layout.fragment_home, container, false);
+
+                recyclerView = view.findViewById(R.id.recyclerViewRecommendation);
+                recyclerView.setLayoutManager(new GridLayoutManager(requireActivity(), 2));
+
+                productAdapter = new ProductAdapter(new ArrayList<>(), Home.this);
+                recyclerView.setAdapter(productAdapter);
+
+                buttonScanQR = view.findViewById(R.id.buttonScanQR);
+                buttonScanQR.setOnClickListener(v -> openGallery());
+
+                fetchProducts();
+
+                searchView = view.findViewById(R.id.search);
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        productAdapter.filter(newText);
+                        return false;
+                    }
+                });
+                return view;
+            }
+
+            private void openGallery() {
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, GALLERY_REQUEST_CODE);
             }
 
             @Override
-            public boolean onQueryTextChange(String newText) {
-                // Filter produk berdasarkan teks pencarian
-                if (productAdapter != null) {
-                    productAdapter.filter(newText);
-                }
-                return true;
-            }
-        });
+            public void onActivityResult(int requestCode, int resultCode, Intent data) {
+                super.onActivityResult(requestCode, resultCode, data);
 
-        return view;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        float x = event.values[0];
-        float y = event.values[1];
-        float z = event.values[2];
-
-        // Hitung akselerasi
-        float acceleration = (float) Math.sqrt(x * x + y * y + z * z);
-        if (acceleration > SHAKE_THRESHOLD) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastShakeTime > 1000) { // 1 detik delay
-                shakeCount++;
-                lastShakeTime = currentTime;
-
-                if (shakeCount == 5) {
-                    Toast.makeText(getActivity(), "wink wink shake shake", Toast.LENGTH_SHORT).show();
-                    shakeCount = 0; // Reset shake count after pop-up
-                    // Acak produk
-                    if (productAdapter != null) {
-                        productAdapter.shuffleProducts();
+                if (requestCode == GALLERY_REQUEST_CODE && resultCode == requireActivity().RESULT_OK && data != null) {
+                    Uri selectedImageUri = data.getData();
+                    try {
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), selectedImageUri);
+                        scanQRCodeFromBitmap(bitmap);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(requireActivity(), "Failed to process the image", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
-        }
-    }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Tidak ada tindakan yang perlu diambil di sini
-    }
+            private void scanQRCodeFromBitmap(Bitmap bitmap) {
+                try {
+                    int[] intArray = new int[bitmap.getWidth() * bitmap.getHeight()];
+                    bitmap.getPixels(intArray, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-    }
+                    RGBLuminanceSource source = new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray);
+                    BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+                    QRCodeReader qrCodeReader = new QRCodeReader();
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        sensorManager.unregisterListener(this);
-    }
+                    Result result = qrCodeReader.decode(binaryBitmap);
+                    String qrCodeContent = result.getText();
 
-    private void fetchProducts() {
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<Product>> call = apiService.getProducts();
+                    Log.d("Home", "Scanned QR Code from Image: " + qrCodeContent);
 
-        call.enqueue(new Callback<List<Product>>() {
-            @Override
-            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
-                if (response.isSuccessful()) {
-                    List<Product> productList = response.body();
-                    // Acak produk
-                    Collections.shuffle(productList);
-                    productAdapter = new ProductAdapter(productList, Home.this);
-                    recyclerView.setAdapter(productAdapter);
-                } else {
-                    Log.e("Home", "Failed to get products, status code: " + response.code());
-                    Toast.makeText(getActivity(), "Failed to load products", Toast.LENGTH_SHORT).show();
+                    fetchProductById(qrCodeContent);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(requireActivity(), "Failed to decode QR Code", Toast.LENGTH_SHORT).show();
                 }
             }
 
-            @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {
-                Log.e("Home", "Error: " + t.getMessage());
-                Toast.makeText(getActivity(), "Failed to connect to API", Toast.LENGTH_SHORT).show();
+            private void fetchProductById(String productId) {
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<Product> call = apiService.getProductById(productId);
+
+                call.enqueue(new Callback<Product>() {
+                    @Override
+                    public void onResponse(Call<Product> call, Response<Product> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            Product product = response.body();
+                            Log.d("Home", "Product received: " + product.getTitle());
+
+                            List<Product> productList = new ArrayList<>();
+                            productList.add(product);
+
+                            productAdapter.setProductList(productList);
+                        } else {
+                            Log.e("Home", "Product not found!");
+                            Toast.makeText(requireActivity(), "Product not found!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Product> call, Throwable t) {
+                        Log.e("Home", "Failed to fetch product", t);
+                        Toast.makeText(requireActivity(), "Failed to fetch product", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
-        });
-    }
 
-    @Override
-    public void onAddToCart(Product product) {
-        Toast.makeText(getActivity(), product.getTitle() + " added to cart", Toast.LENGTH_SHORT).show();
+            private void fetchProducts() {
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<List<Product>> call = apiService.getProducts();
 
-        CartManager cartManager = new CartManager(getActivity());
-        cartManager.addToCart(product);
-    }
-}
+                call.enqueue(new Callback<List<Product>>() {
+                    @Override
+                    public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                        if (response.isSuccessful()) {
+                            List<Product> productList = response.body();
+                            Collections.shuffle(productList);
+
+                            productAdapter.setProductList(productList);
+                            productAdapter.setOriginalProductList(new ArrayList<>(productList));
+                        } else {
+                            Toast.makeText(requireActivity(), "Failed to load products", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<Product>> call, Throwable t) {
+                        Toast.makeText(requireActivity(), "Failed to connect to API", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onAddToCart(Product product) {
+                CartManager cartManager = new CartManager(requireContext());
+                cartManager.addToCart(product);
+
+                Toast.makeText(requireActivity(), "Product added to cart: " + product.getTitle(), Toast.LENGTH_SHORT).show();
+            }
+        }
